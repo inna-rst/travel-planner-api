@@ -1,71 +1,97 @@
+from typing import Optional
 from rest_framework import serializers
-from django.db import transaction
 from .models import Project, Place
-from .services import ArtInstituteAPIClient
-
+from django.utils import timezone
 
 class PlaceSerializer(serializers.ModelSerializer):
+    artwork_image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Place
-        fields = ['id', 'project', 'external_id', 'notes', 'is_visited', 'added_at']
-        read_only_fields = ['id', 'added_at']
-        extra_kwargs = {
-            'project': {'required': False}
-        }
+        fields = [
+            "id", "external_id", "title",
+            "notes", "is_visited", "visited_at",
+            "artwork_image_url", "added_at",
+        ]
 
-        validators = []
+    def get_artwork_image_url(self, obj: Place) -> Optional[str]:
+        image_id = obj.artwork_data.get("image_id")
+        if image_id:
+            return f"https://www.artic.edu/iiif/2/{image_id}/full/843,/0/default.jpg"
+        return None
 
-    def validate_external_id(self, value):
-        if self.instance and self.instance.external_id == value:
-            return value
 
-        if not ArtInstituteAPIClient.validate_place(value):
+class PlaceAddSerializer(serializers.Serializer):
+    external_id = serializers.IntegerField(min_value=1)
+
+
+class PlaceUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Place
+        fields = ["notes", "is_visited"]
+
+    def validate_is_visited(self, value: bool) -> bool:
+        # Бизнес-правило: место нельзя "отменить" как посещённое.
+        if self.instance and self.instance.is_visited and not value:
             raise serializers.ValidationError(
-                f"Place with ID '{value}' does not exist in Art Institute API."
+                "Cannot unmark a visited place."
             )
         return value
 
-class ProjectSerializer(serializers.ModelSerializer):
-    places = PlaceSerializer(many=True, required=True)
+    def update(self, instance: Place, validated_data: dict) -> Place:
+        if validated_data.get("is_visited") and not instance.is_visited:
+            instance.is_visited = True
+            instance.visited_at = timezone.now()
+            validated_data.pop("is_visited", None)
+        return super().update(instance, validated_data)
+
+class ProjectListSerializer(serializers.ModelSerializer):
+    is_completed = serializers.BooleanField(read_only=True)
+    places_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'start_date', 'is_completed', 'created_at', 'places']
-        read_only_fields = ['id', 'is_completed', 'created_at']
+        fields = [
+            "id", "name", "description", "start_date",
+            "is_completed", "places_count",
+            "created_at", "updated_at",
+        ]
 
-    def validate_places(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                "Project must contain at least 1 place."
-            )
 
+class ProjectSerializer(serializers.ModelSerializer):
+    is_completed = serializers.BooleanField(read_only=True)
+    places = PlaceSerializer(many=True, read_only=True)
+    places_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Project
+        fields = [
+            "id", "name", "description", "start_date",
+            "is_completed", "places_count", "places",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "is_completed", "created_at", "updated_at"]
+
+
+class ProjectCreateSerializer(serializers.ModelSerializer):
+    places = PlaceAddSerializer(many=True, required=True, allow_empty=False)
+
+    class Meta:
+        model = Project
+        fields = ["name", "description", "start_date", "places"]
+
+    def validate_places(self, value: list) -> list:
         if len(value) > 10:
-            raise serializers.ValidationError("A project can have a maximum of 10 places.")
-
-        external_ids = [place.get('external_id') for place in value if place.get('external_id')]
-        if len(external_ids) != len(set(external_ids)):
-            raise serializers.ValidationError("Duplicate places in the request are not allowed.")
-
+            raise serializers.ValidationError(
+                f"A project can have at most 10 places. Got {len(value)}."
+            )
+        ids = [p["external_id"] for p in value]
+        if len(ids) != len(set(ids)):
+            raise serializers.ValidationError("Duplicate external_id values in places list.")
         return value
 
-    def create(self, validated_data):
-        places_data = validated_data.pop('places', [])
 
-        with transaction.atomic():
-            project = Project.objects.create(**validated_data)
-
-            for place_data in places_data:
-                external_id = place_data.get('external_id')
-
-                if not ArtInstituteAPIClient.validate_place(external_id):
-                    raise serializers.ValidationError({
-                        "places": f"Place with ID '{external_id}' does not exist in Art Institute API."
-                    })
-
-                Place.objects.create(project=project, **place_data)
-
-        return project
-
-    def update(self, instance, validated_data):
-        validated_data.pop('places', None)
-        return super().update(instance, validated_data)
+class ProjectUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = ["name", "description", "start_date"]
