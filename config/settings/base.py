@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    "drf_spectacular",
     'django_filters',
     'planner.apps.PlannerConfig',
 ]
@@ -97,7 +98,9 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 CACHES = {
@@ -109,4 +112,13 @@ CACHES = {
             "MAX_ENTRIES": 1000,
         }
     }
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Travel Planner API',
+    'DESCRIPTION': 'API service for managing travel projects and places, integrated with the Art Institute of Chicago API.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+
+    'SECURITY': [{'Basic': []}],
 }
