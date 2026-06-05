@@ -55,19 +55,20 @@ DB_PASSWORD=travel_password
 DJANGO_SECRET_KEY=dev-secret-key-do-not-use-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+```
 
 **2. Build and start the containers:**
 The database migrations will be applied automatically on startup:
 
 ```bash
-docker-compose up --build -d
+    docker-compose up --build -d
 ```
 
 **3. Create a user for authentication:**
 Since the API is secured, you need to create a user to authenticate your requests:
 
 ```bash
-docker-compose exec web python manage.py createsuperuser
+    docker-compose exec web python manage.py createsuperuser
 ```
 
 **4. Access the API & Testing:**
