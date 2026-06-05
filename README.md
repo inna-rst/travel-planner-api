@@ -13,7 +13,7 @@ A RESTful REST API service for managing travel projects and places, integrated w
 * **Basic Authentication & Pagination.**
 
 ## Technology Stack
-* Python 3.12
+* Python 3.13
 * Django & Django REST Framework
 * PostgreSQL
 * Docker & Docker Compose
