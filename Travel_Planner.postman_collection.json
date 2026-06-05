@@ -1,0 +1,112 @@
+{
+	"info": {
+		"name": "Travel Planner API",
+		"description": "API collection for Travel Planner project. Includes all CRUD operations for Projects and Places.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000/api/v1",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{ "key": "password", "value": "admin", "type": "string" },
+			{ "key": "username", "value": "admin", "type": "string" }
+		]
+	},
+	"item": [
+		{
+			"name": "Projects",
+			"item": [
+				{
+					"name": "1. Create Project",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Art Tour Chicago\",\n    \"description\": \"Visiting the best exhibitions\",\n    \"start_date\": \"2026-09-01\",\n    \"places\": [\n        {\n            \"external_id\": 111,\n            \"notes\": \"Must see Van Gogh\"\n        }\n    ]\n}"
+						},
+						"url": { "raw": "{{base_url}}/projects/", "host": [ "{{base_url}}" ], "path": [ "projects", "" ] }
+					}
+				},
+				{
+					"name": "2. List Projects (with Pagination & Filters)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/projects/?page=1&is_completed=false",
+							"host": [ "{{base_url}}" ],
+							"path": [ "projects", "" ],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "is_completed", "value": "false" }
+							]
+						}
+					}
+				},
+				{
+					"name": "3. Get Single Project",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/projects/1/", "host": [ "{{base_url}}" ], "path": [ "projects", "1", "" ] }
+					}
+				},
+				{
+					"name": "4. Update Project",
+					"request": {
+						"method": "PATCH",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": { "mode": "raw", "raw": "{\n    \"name\": \"Updated Art Tour Chicago\"\n}" },
+						"url": { "raw": "{{base_url}}/projects/1/", "host": [ "{{base_url}}" ], "path": [ "projects", "1", "" ] }
+					}
+				},
+				{
+					"name": "5. Delete Project",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{base_url}}/projects/1/", "host": [ "{{base_url}}" ], "path": [ "projects", "1", "" ] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Places",
+			"item": [
+				{
+					"name": "1. Add Place to Project",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": { "mode": "raw", "raw": "{\n    \"external_id\": 21125\n}" },
+						"url": { "raw": "{{base_url}}/projects/1/places/", "host": [ "{{base_url}}" ], "path": [ "projects", "1", "places", "" ] }
+					}
+				},
+				{
+					"name": "2. List Places",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/projects/1/places/", "host": [ "{{base_url}}" ], "path": [ "projects", "1", "places", "" ] }
+					}
+				},
+				{
+					"name": "3. Update Place (Mark Visited / Notes)",
+					"request": {
+						"method": "PATCH",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": { "mode": "raw", "raw": "{\n    \"is_visited\": true,\n    \"notes\": \"It was amazing!\"\n}" },
+						"url": { "raw": "{{base_url}}/projects/1/places/1/", "host": [ "{{base_url}}" ], "path": [ "projects", "1", "places", "1", "" ] }
+					}
+				}
+			]
+		}
+	]
+}
